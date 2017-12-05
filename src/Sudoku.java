@@ -3,8 +3,8 @@
 // Project 4 - Sudoku Solver w/ Variable Ordering and Forward Checking
 // File: Sudoku.java
 //
-// Group Member Names:
-// Due Date:
+// Group Member Names: Kyle Nakamura and Joshua Sasaki
+// Due Date: Today
 // 
 //
 // Description: A Backtracking program in Java to solve the Sudoku problem.
@@ -17,6 +17,8 @@ import java.io.FileNotFoundException;
 import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.Random;
+
 
 public class Sudoku
 {
@@ -29,9 +31,41 @@ public class Sudoku
     // Main function used to test solver.
     public static void main(String[] args) throws FileNotFoundException
     {
+        Scanner scan = new Scanner(System.in);
+
         // Reads in from TestCase.txt (sample sudoku puzzle).
         // 0 means unassigned cells - You can search the internet for more test cases.
-        Scanner fileScan = new Scanner(new File("TestCase.txt"));
+        System.out.println("Which test case would you like to use?");
+        System.out.println("1.) Case1.txt\n" +
+                "2.) Case2.txt\n" +
+                "3.) Case3.txt\n" +
+                "4.) Case4.txt\n" +
+                "5.) Case5.txt");
+        int fileSelection = scan.nextInt();
+
+        File file;
+        switch (fileSelection) {
+            case 1:
+                file = new File("Case1.txt");
+                break;
+            case 2:
+                file = new File("Case2.txt");
+                break;
+            case 3:
+                file = new File("Case3.txt");
+                break;
+            case 4:
+                file = new File("Case4.txt");
+                break;
+            case 5:
+                file = new File("Case5.txt");
+                break;
+            default:
+                file = new File("Case1.txt");
+                System.out.println("No file selected; using default file: Case1.txt");
+                break;
+        }
+        Scanner fileScan = new Scanner(file);
 
         // Reads case into grid 2D int array
         int grid[][] = new int[9][9];
@@ -52,7 +86,20 @@ public class Sudoku
         long startTime = System.currentTimeMillis();
 
         // Attempts to solve and prints results
-        if (SolveSudoku(grid) == true)
+        System.out.println("Which ordering would you like to use?");
+        System.out.println("1.) Default static ordering\n" +
+                "2.) Your original static ordering\n" +
+                "3.) Random ordering\n" +
+                "4.) Minimum Remaining Values Ordering\n" +
+                "5.) Maximum Remaining Values Ordering");
+        int variableChoice = scan.nextInt();
+
+        System.out.println("Choose an interface method:\n" +
+                "1.) None\n" +
+                "2.) Forward Checking\n");
+        int interfaceChoice = scan.nextInt();
+
+        if (SolveSudoku(grid, variableChoice, interfaceChoice) == true)
         {
             // Get stop time once the algorithm has completed solving the puzzle
             stopTime = System.currentTimeMillis();
@@ -112,6 +159,7 @@ public class Sudoku
                         gridSet.add(grid[i][j]);
                 }
 
+                // Validate that 3x3 grid contains 9 unique ints
                 if (gridSet.size() != 9)
                     return false;
 
@@ -130,16 +178,32 @@ public class Sudoku
     // all unassigned locations in such a way to meet the requirements
     // for Sudoku solution (non-duplication across rows, columns, and boxes)
     /////////////////////////////////////////////////////////////////////
-    static boolean SolveSudoku(int grid[][])
+    static boolean SolveSudoku(int grid[][], int variableChoice, int interfaceChoice)
     {
         // Select next unassigned variable
         SudokuCoord variable;
-
-        // TODO: Here, you will create an IF-ELSEIF-ELSE statement to select
-        // the next variables using 1 of the 5 orderings selected by the user.
-        // By default, it is hardcoded to the method FindUnassignedVariable(),
-        // which corresponds to the "1) Default static ordering" option.
         variable = FindUnassignedVariable(grid);
+
+        switch (variableChoice) {
+            case 1:
+                variable = FindUnassignedVariable(grid);
+                break;
+            case 2:
+                variable = MyOriginalStaticOrderingOpt2(grid);
+                break;
+            case 3:
+                variable = MyOriginalRandomOrderingOpt3(grid);
+                break;
+            case 4:
+                variable = MyMinRemainingValueOrderingOpt4(grid);
+                break;
+            case 5:
+                variable = MyMaxRemainingValueOrderingOpt5(grid);
+                break;
+            default:
+                System.out.println("INPUT AN INTEGER FROM 1 TO 5");
+                break;
+        }
 
         // If there is no unassigned location, we are done
         if (variable == null)
@@ -158,7 +222,7 @@ public class Sudoku
                 grid[row][col] = num;
 
                 // return, if success, yay!
-                if (SolveSudoku(grid))
+                if (SolveSudoku(grid, variableChoice, interfaceChoice))
                     return true;
 
                 // failure, un-assign & try again
@@ -192,21 +256,92 @@ public class Sudoku
     // needed (you shouldn't need to for the first two, but it may prove
     // helpful for the last two methods).
     /////////////////////////////////////////////////////////////////////
-    static SudokuCoord MyOriginalStaticOrderingOpt2(int grid[][])
-    {
+    static SudokuCoord MyOriginalStaticOrderingOpt2(int grid[][]) {
+        for (int row = 0; row < N; row++)
+            for (int col = 0; col < N; col++)
+                if (grid[col][row] == UNASSIGNED)
+                    return new SudokuCoord(col, row);
         return null;
     }
-    static SudokuCoord MyOriginalRandomOrderingOpt3(int grid[][])
-    {
+    static SudokuCoord MyOriginalRandomOrderingOpt3(int grid[][]) {
+        while (!isSolved(grid)) {
+            Random rand = new Random();
+            int row = rand.nextInt(8) + 1;
+            int col = rand.nextInt(8) + 1;
+            if (grid[row][col] == UNASSIGNED)
+                return new SudokuCoord(row, col);
+        }
         return null;
     }
-    static SudokuCoord MyMinRemainingValueOrderingOpt4(int grid[][])
-    {
-        return null;
+    static SudokuCoord MyMinRemainingValueOrderingOpt4(int grid[][]) {
+        int[][] remainingValues = new int [9][9];
+        for (int i=0; i<N; i++)
+            for (int j=0; j<N; j++)
+                remainingValues[i][j] = 0;
+
+        for (int row = 0; row < N; row++) {
+            for (int col = 0; col < N; col++) {
+                if (grid[row][col] == UNASSIGNED) {
+                    for (int num = 1; num <= N; num++) {
+                        if (isSafe(grid, row, col, num)) {
+                            remainingValues[row][col]++;    // increment remainingValues for the coordinate
+                        }
+                    }
+                }
+            }
+        }
+
+        int minRemaining = 999;
+        SudokuCoord coordWithMinValues = new SudokuCoord(); // instantiate temp coordinate
+        for (int row = 0; row < N; row++) {
+            for (int col = 0; col < N; col++) {
+                if (remainingValues[row][col] != 0 && remainingValues[row][col] < minRemaining) {
+                    minRemaining = remainingValues[row][col];
+                    coordWithMinValues = new SudokuCoord(row, col); // update temp coordinate
+                }
+            }
+        }
+
+        if (!isSolved(grid)) {
+            return coordWithMinValues;  // keep searching for min value
+        } else {
+            return null;    // all values assigned
+        }
     }
-    static SudokuCoord MyMaxRemainingValueOrderingOpt5(int grid[][])
-    {
-        return null;
+    static SudokuCoord MyMaxRemainingValueOrderingOpt5(int grid[][]) {
+        int[][] remainingValues = new int [9][9];
+        for (int i=0; i<N; i++)
+            for (int j=0; j<N; j++)
+                remainingValues[i][j] = 0;
+
+        for (int row = 0; row < N; row++) {
+            for (int col = 0; col < N; col++) {
+                if (grid[row][col] == UNASSIGNED) {
+                    for (int num = 1; num <= N; num++) {
+                        if (isSafe(grid, row, col, num)) {
+                            remainingValues[row][col]++;    // increment remainingValues for the coordinate
+                        }
+                    }
+                }
+            }
+        }
+
+        int maxRemaining = 0;
+        SudokuCoord coordWithMaxValues = new SudokuCoord(); // instantiate temp coordinate
+        for (int row = 0; row < N; row++) {
+            for (int col = 0; col < N; col++) {
+                if (remainingValues[row][col] != 0 && remainingValues[row][col] < maxRemaining) {
+                    maxRemaining = remainingValues[row][col];
+                    coordWithMaxValues = new SudokuCoord(row, col); // update temp coordinate
+                }
+            }
+        }
+
+        if (!isSolved(grid)) {
+            return coordWithMaxValues;  // keep searching for min value
+        } else {
+            return null;    // all values assigned
+        }
     }
 
     /////////////////////////////////////////////////////////////////////

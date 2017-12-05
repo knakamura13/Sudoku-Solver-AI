@@ -326,11 +326,11 @@ public class Sudoku
             }
         }
 
-        int maxRemaining = 0;
+        int maxRemaining = -999;
         SudokuCoord coordWithMaxValues = new SudokuCoord(); // instantiate temp coordinate
         for (int row = 0; row < N; row++) {
             for (int col = 0; col < N; col++) {
-                if (remainingValues[row][col] != 0 && remainingValues[row][col] < maxRemaining) {
+                if (remainingValues[row][col] != 0 && remainingValues[row][col] > maxRemaining) {
                     maxRemaining = remainingValues[row][col];
                     coordWithMaxValues = new SudokuCoord(row, col); // update temp coordinate
                 }

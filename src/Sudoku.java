@@ -266,8 +266,8 @@ public class Sudoku
     static SudokuCoord MyOriginalRandomOrderingOpt3(int grid[][]) {
         while (!isSolved(grid)) {
             Random rand = new Random();
-            int row = rand.nextInt(8) + 1;
-            int col = rand.nextInt(8) + 1;
+            int row = rand.nextInt(9);
+            int col = rand.nextInt(9);
             if (grid[row][col] == UNASSIGNED)
                 return new SudokuCoord(row, col);
         }
